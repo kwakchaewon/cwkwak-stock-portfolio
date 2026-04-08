@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포트폴리오 비중</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f12;
+    --surface: #16181e;
+    --border: rgba(255,255,255,0.07);
+    --text-primary: #f0f0f5;
+    --text-secondary: #8a8fa8;
+    --text-muted: #4a4f66;
+    --accent: #4f8ef7;
+    --positive: #38c98a;
+    --negative: #f05c5c;
+    --radius: 16px;
+  }
+
+  body {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 420px;
+    padding: 28px 24px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+
+  .header {
+    margin-bottom: 24px;
+  }
+
+  .total-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .total-amount {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+
+  .total-count {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 28px;
+  }
+
+  canvas#donut {
+    width: 200px !important;
+    height: 200px !important;
+  }
+
+  .chart-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .chart-center-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  .chart-center-count {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-top: 4px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  .list { display: flex; flex-direction: column; gap: 4px; }
+
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: default;
+    transition: background 0.15s;
+  }
+
+  .item:hover { background: rgba(255,255,255,0.04); }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .item-info { flex: 1; min-width: 0; }
+
+  .item-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .item-amount {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .item-pct {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex-shrink: 0;
+  }
+
+  .bar-wrap {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    background: rgba(255,255,255,0.04);
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .tab {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 0;
+    border-radius: 7px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    border: none;
+    background: none;
+  }
+
+  .tab.active {
+    background: var(--surface);
+    color: var(--text-primary);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+  }
+
+  .refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 20px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .refresh-btn:hover { color: var(--text-secondary); border-color: rgba(255,255,255,0.15); }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-state {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .error-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--negative);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .setup-guide {
+    background: rgba(79,142,247,0.08);
+    border: 1px solid rgba(79,142,247,0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .setup-guide code {
+    background: rgba(255,255,255,0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="total-label">총 투자금액</div>
+    <div class="total-amount" id="total-amount">—</div>
+    <div class="total-count" id="total-count"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab(this,'holding')">보유중</button>
+    <button class="tab" onclick="setTab(this,'all')">전체</button>
+  </div>
+
+  <div class="chart-wrap">
+    <canvas id="donut" width="200" height="200"></canvas>
+    <div class="chart-center">
+      <div class="chart-center-label">종목</div>
+      <div class="chart-center-count" id="center-count">—</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="list" id="stock-list">
+    <div class="loading-state">
+      <div class="spinner" id="spinner" style="display:inline-block;margin-bottom:12px;"></div>
+      <div>데이터를 불러오는 중...</div>
+    </div>
+  </div>
+
+  <button class="refresh-btn" onclick="loadData()">
+    <span>↻</span> 새로고침
+  </button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  // ★ Cloudflare Worker URL
+  const WORKER_URL = 'https://notion-portfolio-proxy.ksh03003.workers.dev';
+
+  const COLORS = [
+    '#4f8ef7','#38c98a','#f5a623','#e85d75','#a78bfa',
+    '#34d399','#fb7185','#60a5fa','#fbbf24','#a3e635',
+    '#f472b6','#38bdf8','#c084fc','#4ade80','#fb923c'
+  ];
+
+  let chartInst = null;
+  let allData   = [];
+  let curTab    = 'holding';
+
+  function fmt(n) {
+    if (!n && n !== 0) return '—';
+    return Number(n).toLocaleString('ko-KR') + '원';
+  }
+
+  function setTab(btn, tab) {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    curTab = tab;
+    render();
+  }
+
+  async function loadData() {
+    if (!WORKER_URL || WORKER_URL === 'YOUR_WORKER_URL') {
+      showSetupGuide();
+      return;
+    }
+
+    document.getElementById('stock-list').innerHTML =
+      '<div class="loading-state"><div class="spinner" style="display:inline-block;margin-bottom:12px;"></div><div>불러오는 중...</div></div>';
+
+    try {
+      const res = await fetch(WORKER_URL);
+
+      if (!res.ok) throw new Error(`Notion API 오류: ${res.status}`);
+      const json = await res.json();
+
+      allData = json.results.map(p => {
+        const props = p.properties;
+        return {
+          name:       props['종목명']?.title?.[0]?.plain_text || '—',
+          status:     props['포지션 상태']?.select?.name || '',
+          invest:     props['투자금액']?.number || 0,
+          buyPrice:   props['매수가']?.number || 0,
+          buyQty:     props['매수수량']?.number || 0,
+          sector:     props['섹터']?.select?.name || '기타',
+          market:     props['시장']?.select?.name || '',
+        };
+      });
+
+      render();
+    } catch (e) {
+      document.getElementById('stock-list').innerHTML =
+        `<div class="error-state">데이터 로드 실패<br><small>${e.message}</small></div>`;
+    }
+  }
+
+  function render() {
+    const filtered = curTab === 'holding'
+      ? allData.filter(s => s.status === '보유중')
+      : allData;
+
+    const withInvest = filtered.filter(s => s.invest > 0);
+    const total = withInvest.reduce((a, s) => a + s.invest, 0);
+
+    // 투자금액 내림차순 정렬
+    withInvest.sort((a, b) => b.invest - a.invest);
+
+    document.getElementById('total-amount').textContent = fmt(total);
+    document.getElementById('total-count').textContent =
+      withInvest.length + '개 종목';
+    document.getElementById('center-count').textContent = withInvest.length;
+
+    drawChart(withInvest, total);
+    drawList(withInvest, total);
+  }
+
+  function drawChart(stocks, total) {
+    const canvas = document.getElementById('donut');
+    const ctx = canvas.getContext('2d');
+
+    if (chartInst) { chartInst.destroy(); chartInst = null; }
+
+    if (!stocks.length) {
+      ctx.clearRect(0, 0, 200, 200);
+      return;
+    }
+
+    chartInst = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: stocks.map(s => s.name),
+        datasets: [{
+          data: stocks.map(s => s.invest),
+          backgroundColor: stocks.map((_, i) => COLORS[i % COLORS.length]),
+          borderWidth: 2,
+          borderColor: '#16181e',
+          hoverBorderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: false,
+        cutout: '68%',
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        animation: { duration: 700, easing: 'easeInOutQuart' }
+      }
+    });
+  }
+
+  function drawList(stocks, total) {
+    const list = document.getElementById('stock-list');
+    if (!stocks.length) {
+      list.innerHTML = '<div class="loading-state" style="padding:20px 0">데이터 없음</div>';
+      return;
+    }
+
+    list.innerHTML = stocks.map((s, i) => {
+      const pct = total > 0 ? (s.invest / total * 100) : 0;
+      const color = COLORS[i % COLORS.length];
+      return `
+        <div class="item">
+          <span class="dot" style="background:${color}"></span>
+          <div class="item-info">
+            <div class="item-name">${s.name}</div>
+            <div class="item-amount">${fmt(s.invest)}</div>
+            <div class="bar-wrap">
+              <div class="bar-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div>
+            </div>
+          </div>
+          <div class="item-pct">${pct.toFixed(1)}%</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function showSetupGuide() {
+    document.getElementById('total-amount').textContent = '설정 필요';
+    document.getElementById('stock-list').innerHTML = `
+      <div class="setup-guide">
+        <strong style="color:#f0f0f5">⚠️ WORKER_URL을 설정해주세요</strong><br><br>
+        이 파일의 <code>WORKER_URL</code> 값을<br>
+        Cloudflare Worker 주소로 바꿔주세요.
+      </div>
+    `;
+  }
+
+  loadData();
+</script>
+</body>
+</html>
