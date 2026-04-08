@@ -147,6 +147,20 @@
     margin-top: 2px;
   }
 
+  .item-sub {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  .item-sub strong {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
   .item-pct {
     font-size: 15px;
     font-weight: 600;
@@ -302,6 +316,9 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
+  // ─────────────────────────────────────────
+  // ★ 여기에 설정값을 입력하세요
+  // ─────────────────────────────────────────
   // ★ Cloudflare Worker URL
   const WORKER_URL = 'https://notion-portfolio-proxy.ksh03003.workers.dev';
 
@@ -338,8 +355,7 @@
 
     try {
       const res = await fetch(WORKER_URL);
-
-      if (!res.ok) throw new Error(`Notion API 오류: ${res.status}`);
+      if (!res.ok) throw new Error(`Worker 오류: ${res.status}`);
       const json = await res.json();
 
       allData = json.results.map(p => {
@@ -424,12 +440,20 @@
     list.innerHTML = stocks.map((s, i) => {
       const pct = total > 0 ? (s.invest / total * 100) : 0;
       const color = COLORS[i % COLORS.length];
+      const avgPrice = s.buyPrice ? s.buyPrice.toLocaleString('ko-KR') + '원' : '—';
+      const qty = s.buyQty ? s.buyQty.toLocaleString('ko-KR') + '주' : '—';
       return `
         <div class="item">
           <span class="dot" style="background:${color}"></span>
           <div class="item-info">
-            <div class="item-name">${s.name}</div>
-            <div class="item-amount">${fmt(s.invest)}</div>
+            <div class="item-name">${s.name}
+              <span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:6px">${s.market||''}</span>
+            </div>
+            <div class="item-sub">
+              <span>평단가 <strong>${avgPrice}</strong></span>
+              <span>${qty}</span>
+              <span>보유 <strong>${fmt(s.invest)}</strong></span>
+            </div>
             <div class="bar-wrap">
               <div class="bar-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div>
             </div>
@@ -444,9 +468,11 @@
     document.getElementById('total-amount').textContent = '설정 필요';
     document.getElementById('stock-list').innerHTML = `
       <div class="setup-guide">
-        <strong style="color:#f0f0f5">⚠️ WORKER_URL을 설정해주세요</strong><br><br>
-        이 파일의 <code>WORKER_URL</code> 값을<br>
-        Cloudflare Worker 주소로 바꿔주세요.
+        <strong style="color:#f0f0f5">📋 설정 방법</strong><br><br>
+        1. <a href="https://www.notion.so/my-integrations" target="_blank" style="color:#4f8ef7">notion.so/my-integrations</a> 에서 Integration 생성<br>
+        2. 토큰 복사 후 이 파일의 <code>NOTION_TOKEN</code> 에 붙여넣기<br>
+        3. Notion DB 페이지에서 우상단 <code>...</code> → <code>Connect to</code> → 생성한 Integration 연결<br>
+        4. 파일 저장 후 새로고침
       </div>
     `;
   }
